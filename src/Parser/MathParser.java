@@ -149,16 +149,7 @@ public class MathParser {
         char unary = source.charAt(pos);
         Next();
 
-        if (!checkEnd() && Character.isDigit(source.charAt(pos))) {
-            //ReadNumber(States.Operation);
-            operations.push(new Node(Signals.UnOp, "#"));
-        }
-        else if (!checkEnd() && (getSymbol() == '(' || Character.isAlphabetic(getSymbol()))) {
-            operations.push(new Node(Signals.UnOp, "#"));
-        }
-        else {
-            throw new RuntimeException("Error with Unary operation");
-        }
+        operations.push(new Node(Signals.UnOp, "#"));
     }
 
     private static void ReadFunction(States state_) {
