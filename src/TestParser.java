@@ -12,7 +12,7 @@ public class TestParser {
         //Parser.MathParser parser = new Parser.MathParser("sin(pi / 2) * 2 - 3* 10");
         //Parser.MathParser parser = new Parser.MathParser("2-(-2)");
 //        MathParser parser = new MathParser("sin(pi / 2)");
-        MathParser parser = new MathParser("- (2 + 3 * 4 - 144) * 2");
+        MathParser parser = new MathParser("sin(pi / 2) * 2 - 3* 10");
 
 
         System.out.println(parser.getConvertedString());

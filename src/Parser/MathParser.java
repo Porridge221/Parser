@@ -97,10 +97,6 @@ public class MathParser {
         while (!operations.empty() && operations.peek().signal != Signals.BktL) {
             result.add(operations.pop());
         }
-
-        if (!operations.empty() && operations.peek().signal == Signals.BktL) {
-            operations.pop();
-        }
     }
 
 
@@ -172,6 +168,14 @@ public class MathParser {
         Next();
 
         displace();
+        if (!operations.empty() && operations.peek().signal == Signals.BktL) {
+            operations.pop();
+            if (!operations.empty() && (operations.peek().signal == Signals.UnOp || operations.peek().signal == Signals.Func))
+                result.add(operations.pop());
+        } else {
+            throw new RuntimeException("An attempt was made to fix mismatched parentheses");
+        }
+
         priority = operations.empty() ? 0 : get_priority(operations.peek().token.charAt(0));
     }
 
