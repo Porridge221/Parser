@@ -100,9 +100,6 @@ public class MathParser {
 
         if (!operations.empty() && operations.peek().signal == Signals.BktL) {
             operations.pop();
-            while (!operations.empty() && (operations.peek().signal == Signals.UnOp || operations.peek().signal == Signals.Func)) {
-                result.add(operations.pop());
-            }
         }
     }
 
