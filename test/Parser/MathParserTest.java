@@ -16,12 +16,6 @@ public class MathParserTest {
     }
 
     @Test
-    public void getSignal() throws Exception {
-        parser = new MathParser("2");
-        assertEquals(MathParser.Signals.ID, parser.getSignal("sina"));
-    }
-
-    @Test
     public void setVariable() throws Exception {
         parser = new MathParser("a + 2");
         parser.setVariable("a", 163.123);
@@ -141,6 +135,20 @@ public class MathParserTest {
         parser = new MathParser("sin(-(-2-2)*sina)-2");
         parser.setVariable("sina", 15.5);
         assertEquals(Math.sin(-(-2-2)*15.5)-2, parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_19() throws Exception {
+        parser = new MathParser("-  2 + 3");
+        parser.setVariable("sina", 15.5);
+        assertEquals(-2+3, parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_20() throws Exception {
+        parser = new MathParser("-  ((2 + 3))");
+        parser.setVariable("sina", 15.5);
+        assertEquals(-5, parser.Execute(), epsilon);
     }
 
 }

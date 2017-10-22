@@ -2,7 +2,6 @@ package Parser;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,26 +15,27 @@ import java.util.regex.Pattern;
  */
 public class MathParser {
 
-    private static String source;
-    private static int pos = 0;
-    private static States state = States.Expr;
-    private static int priority = 0;
-    private static Stack<Node> operations = new Stack<>();
-    private static HashMap<String, Double> var;
+    private String source;
+    private int pos = 0;
+    private States state = States.Expr;
+    private int priority = 0;
+    private int parenthesesCount = 0;
+    private Stack<Node> operations = new Stack<>();
+    private HashMap<String, Double> var;
 
-    private static ArrayList<Node> result = new ArrayList<>();
+    private ArrayList<Node> result = new ArrayList<>();
 
-    private static String var1;
-    private static String var2;
+    private String var1;
+    private String var2;
 
 
-    private static class Node {
+    private class Node {
         Signals signal;
         String token;
 
-        Node(Signals signal_, String token_) {
-            signal = signal_;
-            token = token_;
+        Node(Signals signal, String token) {
+            this.signal = signal;
+            this.token = token;
         }
     }
 
@@ -55,26 +55,26 @@ public class MathParser {
     private String[] DEFAULT_FUNCTIONS = { "sin", "cos", "tan", "ln", "ctg", "sinh", "cosh", "tanh", "lg", "abs", "sqrt" };
 
 
-    Signals getSignal(String input) {
-        if (Character.toString(input.charAt(pos)).matches(DEFAULT_WHITESPACES))
+    private Signals getSignal() {
+        if (Character.toString(source.charAt(pos)).matches(DEFAULT_WHITESPACES))
             return Signals.Space;
-        if (Character.isDigit(input.charAt(pos)))
+        if (Character.isDigit(source.charAt(pos)))
             return Signals.Digit;
-        if (Character.toString(input.charAt(pos)).matches(DEFAULT_BINARYOPERATIONS))
+        if (Character.toString(source.charAt(pos)).matches(DEFAULT_BINARYOPERATIONS))
             return Signals.BinOp;
-        if (input.charAt(pos) == '-')
+        if (source.charAt(pos) == '-')
             return Signals.UnOp;
-        if (input.charAt(pos) == '(')
+        if (source.charAt(pos) == '(')
             return Signals.BktL;
-        if (input.charAt(pos) == ')')
+        if (source.charAt(pos) == ')')
             return Signals.BktR;
-        if (Character.toString(input.charAt(pos)).matches(DEFAULT_ENDL))
+        if (Character.toString(source.charAt(pos)).matches(DEFAULT_ENDL))
             return Signals.Endl;
-        if (Character.isAlphabetic(input.charAt(pos))) {
+        if (Character.isAlphabetic(source.charAt(pos))) {
             for (String i : DEFAULT_FUNCTIONS) {
-                if (input.regionMatches(pos, i, 0, i.length())
-                        && !Character.isAlphabetic(input.charAt(pos + i.length()))
-                        && !Character.isDigit(input.charAt(pos + i.length())))
+                if (source.regionMatches(pos, i, 0, i.length())
+                        && !Character.isAlphabetic(source.charAt(pos + i.length()))
+                        && !Character.isDigit(source.charAt(pos + i.length())))
                     return Signals.Func;
             }
             return Signals.ID;
@@ -83,7 +83,7 @@ public class MathParser {
         return Signals.Unknown;
     }
 
-    private static int get_priority(char token) {
+    private int get_priority(char token) {
         if (token == '+') return 1;
         if (token == '-') return 1;
         if (token == '*') return 2;
@@ -93,20 +93,20 @@ public class MathParser {
         return 0; // Возвращаем 0 если токен - это не бинарная операция (например ")")
     }
 
-    private static void displace() {
+    private void displace() {
         while (!operations.empty() && operations.peek().signal != Signals.BktL) {
             result.add(operations.pop());
         }
     }
 
 
-    private static void ReadSpaces(States state_) {
-        state = state_;
+    private void ReadSpaces(States state) {
+        this.state = state;
         Next();
     }
 
-    private static void ReadNumber(States state_) {
-        state = state_;
+    private void ReadNumber(States state) {
+        this.state = state;
         StringBuilder number = new StringBuilder();
         int separatorCount = 0;
         while (!checkEnd() && (Character.isDigit(source.charAt(pos)) || source.charAt(pos) == '.')) {
@@ -124,8 +124,8 @@ public class MathParser {
         }
     }
 
-    private static void ReadBinaryOp(States state_) {
-        state = state_;
+    private void ReadBinaryOp(States state) {
+        this.state = state;
         char binary = source.charAt(pos);
         Next();
 
@@ -137,16 +137,16 @@ public class MathParser {
         operations.push(new Node(Signals.BinOp, Character.toString(binary)));
     }
 
-    private static void ReadUnaryOp(States state_) {
-        state = state_;
+    private void ReadUnaryOp(States state) {
+        this.state = state;
         char unary = source.charAt(pos);
         Next();
 
         operations.push(new Node(Signals.UnOp, "#"));
     }
 
-    private static void ReadFunction(States state_) {
-        state = state_;
+    private void ReadFunction(States state) {
+        this.state = state;
         StringBuilder function = new StringBuilder();
 
         while (!checkEnd() && source.charAt(pos) != ' ' && source.charAt(pos) != '(') {
@@ -157,15 +157,17 @@ public class MathParser {
         operations.push(new Node(Signals.Func, function.toString()));
     }
 
-    private static void ReadLeftBkt(States state_) {
-        state = state_;
+    private void ReadLeftBkt(States state) {
+        this.state = state;
         Next();
+        parenthesesCount++;
         operations.push(new Node(Signals.BktL, "("));
     }
 
-    private static void ReadRightBkt(States state_) {
-        state = state_;
+    private void ReadRightBkt(States state) {
+        this.state = state;
         Next();
+        parenthesesCount--;
 
         displace();
         if (!operations.empty() && operations.peek().signal == Signals.BktL) {
@@ -173,14 +175,14 @@ public class MathParser {
             if (!operations.empty() && (operations.peek().signal == Signals.UnOp || operations.peek().signal == Signals.Func))
                 result.add(operations.pop());
         } else {
-            throw new RuntimeException("An attempt was made to fix mismatched parentheses");
+            throw new RuntimeException("mismatched parentheses");
         }
 
         priority = operations.empty() ? 0 : get_priority(operations.peek().token.charAt(0));
     }
 
-    private static void ReadID(States state_) {
-        state = state_;
+    private void ReadID(States state) {
+        this.state = state;
         StringBuilder id = new StringBuilder();
 
         while (!checkEnd() && (Character.isAlphabetic(source.charAt(pos)) || Character.isDigit(source.charAt(pos)))) {
@@ -204,13 +206,12 @@ public class MathParser {
 
     }
 
-    private static void RP(States state_) { }
+    private void RP(States state_) { }
 
-    private static void HandleError(States state_) {
+    private void HandleError(States state_) {
         state = state_;
         throw new RuntimeException("Unknown syntax expression");
     }
-
 
 
     public MathParser() {
@@ -236,31 +237,15 @@ public class MathParser {
 
     private void Parse() {
         while(!checkEnd()) {
-            Signals signal = getSignal(source);
+            Signals signal = getSignal();
             Cell cell = FSM_table[state.ordinal()][signal.ordinal()];
             cell.worker.work(cell.state);
         }
+        displace();
 
-        while (!operations.empty())
-            displace();
-
-        Pattern pattern = Pattern.compile("\\(");
-        Matcher matcher = pattern.matcher(source);
-
-        int countBktL = 0;
-        while (matcher.find())
-            countBktL++;
-
-        pattern = Pattern.compile("\\)");
-        matcher = pattern.matcher(source);
-
-        int countBktR = 0;
-        while (matcher.find())
-            countBktR++;
-
-        if (countBktL != countBktR) {
+        if (parenthesesCount != 0) {
             result = new ArrayList<>();
-            throw new RuntimeException("counter brackets");
+            throw new RuntimeException("mismatched parentheses");
         }
     }
 
@@ -332,7 +317,7 @@ public class MathParser {
 
 
 
-    public static void setVariable(String varName, Double varValue) {
+    public void setVariable(String varName, Double varValue) {
         var.put(varName, varValue);
     }
 
@@ -398,15 +383,15 @@ public class MathParser {
     }
 
 
-    private static char getSymbol() {
+    private char getSymbol() {
         return pos < source.length() ? source.charAt(pos) : (char)0;
     }
 
-    private static boolean checkEnd() {
+    private boolean checkEnd() {
         return getSymbol() == 0;
     }
 
-    private static void Next() {
+    private void Next() {
         if (!checkEnd())
             pos++;
     }
@@ -429,17 +414,17 @@ public class MathParser {
     }
 
     Cell[][] FSM_table = {
-            { new Cell(States.Expr, MathParser::ReadSpaces), new Cell(States.Operation, MathParser::ReadNumber), new Cell(States.Error, MathParser::HandleError),
-                    new Cell(States.Operand, MathParser::ReadUnaryOp), new Cell(/*Operation*/States.Expr, MathParser::ReadFunction), new Cell(States.Expr, MathParser::ReadLeftBkt),
-                    new Cell(States.Operation, MathParser::ReadRightBkt), new Cell(States.Error, MathParser::HandleError), new Cell(States.Operation, MathParser::ReadID) },
+            { new Cell(States.Expr, this::ReadSpaces), new Cell(States.Operation, this::ReadNumber), new Cell(States.Error, this::HandleError),
+                    new Cell(States.Operand, this::ReadUnaryOp), new Cell(/*Operation*/States.Expr, this::ReadFunction), new Cell(States.Expr, this::ReadLeftBkt),
+                    new Cell(States.Operation, this::ReadRightBkt), new Cell(States.Error, this::HandleError), new Cell(States.Operation, this::ReadID) },
 
-            { new Cell(States.Operation, MathParser::ReadSpaces), new Cell(States.Error, MathParser::HandleError), new Cell(States.Operand, MathParser::ReadBinaryOp),
-                    new Cell(States.Operand, MathParser::ReadBinaryOp), new Cell(States.Error, MathParser::HandleError), new Cell(States.Error, MathParser::HandleError),
-                    new Cell(States.Operation, MathParser::ReadRightBkt), new Cell(States.Success, MathParser::RP), new Cell(States.Error, MathParser::HandleError) },
+            { new Cell(States.Operation, this::ReadSpaces), new Cell(States.Error, this::HandleError), new Cell(States.Operand, this::ReadBinaryOp),
+                    new Cell(States.Operand, this::ReadBinaryOp), new Cell(States.Error, this::HandleError), new Cell(States.Error, this::HandleError),
+                    new Cell(States.Operation, this::ReadRightBkt), new Cell(States.Success, this::RP), new Cell(States.Error, this::HandleError) },
 
-            { new Cell(States.Operand, MathParser::ReadSpaces), new Cell(States.Operation, MathParser::ReadNumber), new Cell(States.Error, MathParser::HandleError),
-                    new Cell(States.Error, MathParser::HandleError), new Cell(/*Operation*/States.Expr, MathParser::ReadFunction), new Cell(States.Expr, MathParser::ReadLeftBkt),
-                    new Cell(States.Error, MathParser::HandleError), new Cell(States.Error, MathParser::HandleError), new Cell(States.Operation, MathParser::ReadID ) }
+            { new Cell(States.Operand, this::ReadSpaces), new Cell(States.Operation, this::ReadNumber), new Cell(States.Error, this::HandleError),
+                    new Cell(States.Error, this::HandleError), new Cell(/*Operation*/States.Expr, this::ReadFunction), new Cell(States.Expr, this::ReadLeftBkt),
+                    new Cell(States.Error, this::HandleError), new Cell(States.Error, this::HandleError), new Cell(States.Operation, this::ReadID ) }
     };
 
 }
