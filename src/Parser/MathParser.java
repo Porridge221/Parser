@@ -283,7 +283,7 @@ public class MathParser {
             }
         }
 
-        return stack.pop();
+        return stack.empty() ? 0 : stack.pop();
     }
 
     private double processFunction(String func, Double value) {
