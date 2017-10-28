@@ -151,4 +151,52 @@ public class MathParserTest {
         assertEquals(-5, parser.Execute(), epsilon);
     }
 
+    @Test
+    public void testExecute_21() throws Exception {
+        parser = new MathParser("-2 + sin(pi)");
+        assertEquals(-2 + Math.sin(Math.PI), parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_22() throws Exception {
+        parser = new MathParser("arcsin(sin(pi /2))");
+        assertEquals(Math.asin(Math.sin(Math.PI / 2)), parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_23() throws Exception {
+        parser = new MathParser("-23.2^3");
+        assertEquals(-23.2*(-23.2)*(-23.2), parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_24() throws Exception {
+        parser = new MathParser("-23.2^2");
+        assertEquals((-23.2)*(-23.2), parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_25() throws Exception {
+        parser = new MathParser("3 + 5.4 * 2 / 3 ^(1/2) - 201");
+        assertEquals(3 + 5.4 * 2 / Math.pow(3, 1d/2) - 201, parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_26() throws Exception {
+        parser = new MathParser("3 + (5.4 * 2 / 3) ^(1/2) - 201");
+        assertEquals(3 + Math.pow(5.4 * 2 / 3, 1d/2) - 201, parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_27() throws Exception {
+        parser = new MathParser("13 - sin(5) * 24.15 ^(- sin(-13*pi/2) +  3/17) * 10 - 2 / 4  ");
+        assertEquals(13 - Math.sin(5) * Math.pow(24.15, (- Math.sin(-13*Math.PI/2) +  3d/17)) * 10 - 2d / 4, parser.Execute(), epsilon);
+    }
+
+    @Test
+    public void testExecute_101() throws Exception {
+        parser = new MathParser("3 + 5.4 * 2 / 3");
+        assertEquals(3 + 5.4 * 2 / 3, parser.Execute(), epsilon);
+    }
+
 }

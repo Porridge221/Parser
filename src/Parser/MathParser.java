@@ -49,10 +49,10 @@ public class MathParser {
 
 
     private String DEFAULT_WHITESPACES = "( )|(\r)|(\t)";
-    private String DEFAULT_BINARYOPERATIONS = "(\\+)|(\\*)|(/)";
+    private String DEFAULT_BINARYOPERATIONS = "(\\+)|(\\*)|(/)|(\\^)";
     //private String DEFAULT_UNARYOPERATIONS[1] = { "-" };
     private String DEFAULT_ENDL = "\n\0";
-    private String[] DEFAULT_FUNCTIONS = { "sin", "cos", "tan", "ln", "ctg", "sinh", "cosh", "tanh", "lg", "abs", "sqrt" };
+    private String[] DEFAULT_FUNCTIONS = { "sin", "cos", "arcsin", "arccos", "tan", "ln", "ctg", "sinh", "cosh", "tanh", "lg", "abs", "sqrt" };
 
 
     private Signals getSignal() {
@@ -88,6 +88,7 @@ public class MathParser {
         if (token == '-') return 1;
         if (token == '*') return 2;
         if (token == '/') return 2;
+        if (token == '^') return 3;
         //if (token == "mod") return 2; // остаток от деления
         //if (token == "**") return 3; // степень
         return 0; // Возвращаем 0 если токен - это не бинарная операция (например ")")
@@ -130,7 +131,7 @@ public class MathParser {
         Next();
 
         int newPriority = get_priority(binary);
-        if (newPriority <= priority) {
+        if (newPriority < priority) {
             displace();
         }
         priority = newPriority;
@@ -161,6 +162,7 @@ public class MathParser {
         this.state = state;
         Next();
         parenthesesCount++;
+        priority = 0;
         operations.push(new Node(Signals.BktL, "("));
     }
 
@@ -172,7 +174,7 @@ public class MathParser {
         displace();
         if (!operations.empty() && operations.peek().signal == Signals.BktL) {
             operations.pop();
-            if (!operations.empty() && (operations.peek().signal == Signals.UnOp || operations.peek().signal == Signals.Func))
+            while (!operations.empty() && (operations.peek().signal == Signals.UnOp || operations.peek().signal == Signals.Func || operations.peek().token.equals("^")))
                 result.add(operations.pop());
         } else {
             throw new RuntimeException("mismatched parentheses");
@@ -268,6 +270,8 @@ public class MathParser {
                         stack.push(first + second);
                     else if (i.token.equals("-"))
                         stack.push(first - second);
+                    else if (i.token.equals("^"))
+                        stack.push(Math.pow(first, second));
                     break;
                 case UnOp:
                     stack.push(0 - stack.pop());
@@ -292,6 +296,10 @@ public class MathParser {
                 return Math.sin(value);
             case "cos":
                 return Math.cos(value);
+            case "arcsin":
+                return Math.asin(value);
+            case "arccos":
+                return Math.acos(value);
             case "tan":
                 return Math.tan(value);
             case "ln":
